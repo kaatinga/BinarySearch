@@ -23,7 +23,7 @@ func main() {
 
 	// Добавляем числа
 	for i := 1; i < int(sliceSize); i++ {
-		numbers[i] = numbers[i-1] + 1 + uint16(rand.Int31n(limit/sliceSize))
+		numbers[i] = numbers[i-1] + uint16(rand.Int31n(limit/sliceSize))
 	}
 
 	var aNumber uint16 = numbers[rand.Int31n(sliceSize)]
@@ -31,10 +31,10 @@ func main() {
 	log.Println("Chosen number is", aNumber)
 	log.Println("Numbers:", numbers)
 
-	iterationNumber, foundInIndex := search(0, numbers, aNumber)
+	iterationNumber, foundInIndex := search(&numbers, aNumber)
 	check(numbers, foundInIndex, aNumber, iterationNumber)
 
-	iterationNumber, foundInIndex = search(0, numbers, 5)
+	iterationNumber, foundInIndex = search(&numbers, 5)
 	check(numbers, foundInIndex, 5, iterationNumber)
 }
 
@@ -48,48 +48,51 @@ func check(numbers []uint16, foundInIndex uint16, aNumber uint16, iterationNumbe
 	}
 }
 
-func search(iterationToInput int32, numbers []uint16, aNumber uint16) (i int32, foundInIndex uint16) {
+func search(numbers *[]uint16, aNumber uint16) (i int32, foundInIndex uint16) {
 
-	i = iterationToInput + 1
+	var start, end, currentIndex uint16
+	end = uint16(len(*numbers) - 1)
 
-	var whereToCut = uint16(len(numbers) / 2)
+	for {
 
-	switch {
-	case len(numbers) == 1 && numbers[whereToCut] != aNumber:
+		time.Sleep(2 * time.Second)
 
-		// это случается только в одном случае, если число не найдено
-		return
-	case numbers[whereToCut] == aNumber:
+		i++
 
-		log.Println("the number", numbers[whereToCut], "=", aNumber, "!")
+		currentIndex = start + ((end - start) / 2)
+		log.Println("current index is", currentIndex)
+		log.Println("start is", start)
+		log.Println("end is", end)
 
-		// число найдено
-		foundInIndex = whereToCut
+		switch {
+		case start-end == 0 && (*numbers)[start] != aNumber:
 
-		return
+			// это случается только в одном случае, если число не найдено
+			return
 
-	case numbers[whereToCut] > aNumber:
+		case (*numbers)[currentIndex] > aNumber:
 
-		log.Println("the number", numbers[whereToCut], ">", aNumber)
+			log.Println("the number", (*numbers)[currentIndex], ">", aNumber)
 
-		// число в нижней части куска среза, отправляем на анализ повторно
-		i, foundInIndex = search(i, numbers[:whereToCut], aNumber)
+			// число в нижней части куска среза, сжимаем область поиска справа
+			end = currentIndex
 
-		log.Println("returned with index", foundInIndex)
+		case (*numbers)[currentIndex] < aNumber:
 
-	case numbers[whereToCut] < aNumber:
+			log.Println("the number", (*numbers)[currentIndex], "<", aNumber)
 
-		log.Println("the number", numbers[whereToCut], "<", aNumber)
+			// число в верхней части куска среза, сжимаем область поиска слева
+			start = currentIndex + 1
 
-		// число в верхней части куска среза, отправляем на анализ повторно
-		i, foundInIndex = search(i, numbers[whereToCut+1:], aNumber)
+			log.Println("returned with index", foundInIndex)
+		default:
 
-		// чтобы index был верный для исходного среза, нужно его считать
-		// правильно (увеличиваем на длинну отрезанной слева части):
-		foundInIndex = foundInIndex + (whereToCut + 1)
+			log.Println("the number", (*numbers)[currentIndex], "=", aNumber, "!")
 
-		log.Println("returned with index", foundInIndex)
+			// число найдено
+			foundInIndex = currentIndex
+
+			return
+		}
 	}
-
-	return
 }
